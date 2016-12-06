@@ -1,0 +1,12 @@
+{
+    "name": "m1ome/test-iso-8583",
+    "description": "Testing iso8583 protocol",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "w1n2k",
+            "email": "cryfall@gmail.com"
+        }
+    ],
+    "require": {}
+}
