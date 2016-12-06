@@ -31,6 +31,7 @@ class Command
 
     $climate->bold()->info('ISO8583 Testing Suite');
     $climate->dim()->info('For usage information use ./bin/suite --help');
+    $climate->draw('bender');
     $climate->border();
     $climate->br();
 
@@ -53,14 +54,15 @@ class Command
       $climate->info('Running suites: ' . implode(',', $suites));
     }
 
+    $resultsCli = $climate->padding(30);
     $suiteInstance = new Suite();
     foreach($suites as $suite) {
       $result = $suiteInstance->run($suite);
-      var_dump($result);
+
+      $name = '<bold>' . $result['name'] . '</bold>';
+      $res  = '<bold>' . ($result['result'] ? '<green>Passed</green>' : '<red>Failed</red>' ) . '</bold>';
+      $res .= '(' . $result['message'] . ')';
+      $resultsCli->label($name)->result($res);
     }
-
-
-
-    // $climate->out('Printing to terminal');
   }
 }
