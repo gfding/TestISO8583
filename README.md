@@ -1,1 +1,1 @@
-# TestISO8583
+# Script for testing ISO8583 protocol

@@ -8,5 +8,13 @@
             "email": "cryfall@gmail.com"
         }
     ],
-    "require": {}
+    "require": {
+        "miome/iso8583": "^1.1",
+        "league/climate": "^3.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "TestSuite\\": "src/"
+        }
+    }
 }
