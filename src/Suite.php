@@ -36,6 +36,16 @@ class Suite
       }
 
       $instance = new $classname($this->config, $this->protocol);
-      $instance->check();
+      try {
+        $instance->check();
+      } catch(\Exception $e) {
+        $result = [
+          'name'    => ucfirst($check),
+          'result'  => false,
+          'message' => $e->getMessage()
+        ];
+      }
+
+      return $result;
   }
 }

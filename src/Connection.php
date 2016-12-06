@@ -88,6 +88,11 @@ class Connection
 		// Reading all incoming data (answer)
 		$s      = $this->socket;
 		$buffer = socket_read($s, self::READ_SIZE);
+
+		if (!$buffer) {
+			throw new SocketError('Empty response from socket');
+		}
+
 		$sockets = [$s];
 		while(socket_select($sockets, $w, $e, 0)) {
 			$buffer .= socket_read($s, self::READ_SIZE);
