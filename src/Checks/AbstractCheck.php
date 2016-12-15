@@ -14,14 +14,23 @@ abstract class AbstractCheck
   protected $config;
   protected $request;
   protected $expectation;
+	protected $connection;
+	protected $persistent;
 
   /**
    * New check constructor
    */
-  public function __construct($config, $protocol)
+  public function __construct($config, $protocol, $persistent = true, $connection = null)
   {
     $this->protocol = $protocol;
     $this->config   = $config;
+		$this->persistent = $persistent;
+
+		if ($connection === null) {
+			$this->setConnection();
+		} else {
+			$this->connection = $connection;
+		}
   }
 
   /**
@@ -74,7 +83,17 @@ abstract class AbstractCheck
 
   public function check()
   {
-    $config = [];
+		$message = $this->request()->pack();
+		$answer = $this->sendMessage($message);
+    $unpackedAnswer = $this->getEmptyMessage();
+		$unpackedAnswer->unpack($answer);
+
+		return $this->expectation($unpackedAnswer);
+  }
+
+	public function setConnection()
+	{
+		$config = [];
     if ($this->config->get('host')) {
       $config['host'] = $this->config->get('host');
     }
@@ -83,19 +102,43 @@ abstract class AbstractCheck
       $config['port'] = $this->config->get('port');
     }
 
-    $connection = new Connection($config);
-    $connection->connect();
+		$attempts   = 0;
+		$lastError  = null;
+		$errors     = [];
+    
+		while($attempts < 10) {
+			try {
+				$connection = new Connection($config);
+	    	$connection->connect();
+				break;
+			} catch(\Exception $e) {
+				sleep(1);
+				$attempts++;
+				$lastError = $e->getMessage();
+				$errors[] = $e->getMessage();
+			}
+		}
 
-    $packedMessage = $this->request()->pack();
-    $answer = $connection->write($packedMessage);
-    var_dump($answer);
-    // $unpackedAnswer = $this->getEmptyMessage()->unpack($answer);
+		var_dump($errors);
 
-    // var_dump($unpackedAnswer);
-  }
+		if ($attempts === 10) {
+			throw new \Exception($lastError);
+		}
 
-  abstract function request();
-  // abstract function expectation();
+		$this->connection = $connection;
+	}
 
-  // abstract public function check();
+	public function resetConnection()
+	{
+		$this->connection->disconnect();
+		$this->connection = null;
+	}
+
+	protected function sendMessage($message)
+	{
+    return $this->connection->write($message);
+	}
+
+  abstract protected function request();
+  abstract protected function expectation($response);
 }

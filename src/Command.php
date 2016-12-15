@@ -22,6 +22,13 @@ class Command
         'description'   => 'Suites, defined by comma separated strings (Default: *)',
         'defaultValue'  => '*'
       ],
+			'persistent' => [
+				'prefix'				=> 'p',
+				'logPrefix'			=> 'persistent',
+				'description'		=> 'Use only one connection, persistent',
+				'castTo'				=> 'bool',
+				'defaultValue'	=> true
+			],
       'help'  => [
         'longPrefix'  => 'help',
         'description' => 'Prints out usage statement',
@@ -40,6 +47,8 @@ class Command
 
     $suite = $climate->arguments->get('suite');
     $help  = $climate->arguments->defined('help');
+		$persistent = $climate->arguments->get('persistent');
+		var_dump($persistent);
 
     if ($help) {
       $climate->usage();
@@ -48,20 +57,29 @@ class Command
 
     if ($suite === '*') {
       $climate->info('Running all suites we have right now');
-      $suites = ['balance'];
+      $suites = [
+				'balance',
+				'auth',
+				'process',
+			];
     } else {
       $suites = explode(',', $suite);
       $climate->info('Running suites: ' . implode(',', $suites));
     }
 
+		$climate->info('Connection state: ' . ($persistent ? 'PERSISTENT' : 'ONETIME'));
+
     $resultsCli = $climate->padding(30);
-    $suiteInstance = new Suite();
+    $suiteInstance = new Suite($persistent);
     foreach($suites as $suite) {
       $result = $suiteInstance->run($suite);
 
       $name = '<bold>' . $result['name'] . '</bold>';
-      $res  = '<bold>' . ($result['result'] ? '<green>Passed</green>' : '<red>Failed</red>' ) . '</bold>';
-      $res .= '(' . $result['message'] . ')';
+      $res  = '<bold>' . ($result['result'] ? '<blue>Passed</blue>' : '<red>Failed</red>' ) . '</bold>';
+			if (strlen($result['message'])) {
+      	$res .= '(' . $result['message'] . ')';
+			}
+
       $resultsCli->label($name)->result($res);
     }
   }

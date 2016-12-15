@@ -10,14 +10,33 @@ class Suite
 {
   protected $config;
   protected $suite;
+	protected $persistent;
+	protected $connection = null;
 
   /**
    * New Suite
    */
-  public function __construct()
+  public function __construct($persistent = true)
   {
     $this->protocol = new Protocol();
     $this->config   = new Config();
+		$this->persistent = $persistent;
+
+		if ($persistent) {
+			$config = [];
+	    if ($this->config->get('host')) {
+	      $config['host'] = $this->config->get('host');
+	    }
+
+	    if ($this->config->get('port')) {
+	      $config['port'] = $this->config->get('port');
+	    }
+
+	    $connection = new Connection($config);
+	    $connection->connect();
+
+			$this->connection = $connection;
+		}
   }
 
   /**
@@ -35,15 +54,26 @@ class Suite
         throw new \TypeError('Unknown check ' . ucfirst($check) . ' please read documentation');
       }
 
-      $instance = new $classname($this->config, $this->protocol);
+      $instance = new $classname($this->config, $this->protocol, $this->persistent, $this->connection);
+			$result = [
+				'name'    => ucfirst($check),
+				'result'  => null,
+				'message' => ''
+			];
+
       try {
-        $instance->check();
+        $response = $instance->check();
+
+				if ($response === true) {
+					$result['result'] = true;
+				}
+
+				if (!$this->persistent) {
+					$instance->resetConnection();
+				}
       } catch(\Exception $e) {
-        $result = [
-          'name'    => ucfirst($check),
-          'result'  => false,
-          'message' => $e->getMessage()
-        ];
+				$result['result']  = false;
+				$result['message'] = $e->getMessage();
       }
 
       return $result;
